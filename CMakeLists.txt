@@ -11,7 +11,9 @@ include(GNUInstallDirs)
 option (ENABLE_DEBUG    "Enable debug." OFF)
 option (ENABLE_SHARED	"Build against shared library." OFF)
 option (ENABLE_STATIC	"Build agasint static library." OFF)
+option (MALI_GPU    "Mali gpu" OFF)
 
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -Wextra -Werror -Wstrict-prototypes -Wmissing-prototypes -std=c99 -O2")
 
 execute_process(COMMAND git --git-dir ${CMAKE_SOURCE_DIR}/.git log COMMAND head -1 COMMAND awk "{print $2}" COMMAND head -c 12 OUTPUT_VARIABLE GIT_SHA_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -96,6 +98,10 @@ if (GPUPERFCNT_FOUND_DDR)
 	add_definitions(-DHAVE_DDR_PERF=${GPUPERFCNT_FOUND_DDR})
 endif()
 
+if(MALI_GPU)
+add_definitions(-DHAVE_GPU_MALI=1)
+endif()
+
 if (ENABLE_DEBUG)
 	add_definitions(-DUSE_DEBUG=1)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3 -ggdb3")
@@ -103,7 +109,11 @@ else()
 	add_definitions(-D_FORTIFY_SOURCE=2)
 endif()
 
-add_executable(gputop gputop/top.c gputop/debugfs.c)
+if(MALI_GPU)
+       add_executable(gputop gputop/top_mali.c gputop/gpuinfo_mali.cpp gputop/debugfs_mali.c)
+else()
+       add_executable(gputop gputop/top.c gputop/debugfs.c)
+endif()
 
 if (ENABLE_STATIC)
 	message(STATUS "Build against static...")

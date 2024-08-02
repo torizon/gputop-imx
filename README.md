@@ -39,6 +39,15 @@ Build
 	-DGPUPERFCNT_INCLUDE_PATH=/path/to/libgpuperfcnt/include/ \
 	-DGPUPERFCNT_LIB_PATH=/path/to/where/the/library/exists/libgpuperfcnt/ .. 
 
+for mali gpu:
+          $cmake -DMALI_GPU=1 -DCMAKE_TOOLCHAIN_FILE=../cmake/OEToolchainConfig.cmake  ..
+To get process based cctx memory usage, you need:
+killall weston
+export MALI_REPORT_MEM_USAGE=1
+systemctl restart weston
+./gputop
+./gputop -h         see usage
+
 Install:
 
 	$ make install

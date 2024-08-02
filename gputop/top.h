@@ -156,6 +156,7 @@ enum flags_type {
  * Note: currently this is supported only on Linux, under QNX
  * this is always true.
  */
+#ifndef HAVE_GPU_MALI
 struct profiler_state {
 	bool enabled;
 	int state;
@@ -226,6 +227,7 @@ struct gtop_clocks_governor {
 	struct debugfs_govern governor;
 	struct debugfs_clock clock;
 };
+#endif
 
 #if defined HAVE_DDR_PERF && defined __linux__
 #define PERF_DDR_PMUS_COUNT	2
