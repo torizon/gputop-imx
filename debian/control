@@ -2,8 +2,7 @@ Source: gputop
 Section: devel
 Priority: optional
 Maintainer: Toradex Packaging Team <debian-pkg-team@toradex.com>
-Uploaders: Abdur Rehman <abdur.rehman@toradex.com>,
-           Carlos Henrique Lima Melara <carlos.melara@toradex.com>,
+Uploaders: Carlos Henrique Lima Melara <carlos.melara@toradex.com>,
            Leonardo Held <leonardo.held@toradex.com>
 Build-Depends: debhelper-compat (= 13), cmake, libgpuperfcnt
 Standards-Version: 4.6.2

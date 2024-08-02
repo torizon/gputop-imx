@@ -1,3 +1,9 @@
+gputop (6.4.11.p2.6) bookworm; urgency=medium
+
+  * Bump to 6.4.11.p2.6.
+
+ -- Leonardo Held <leonardo.held@toradex.com>  Fri, 2 Aug 2024 11:08:22 -0300
+
 gputop (1.3.0+git20230427.0040dfe-toradex1) bookworm; urgency=medium
 
   * Initial release
