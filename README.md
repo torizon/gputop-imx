@@ -41,16 +41,18 @@ Build
 
 for mali gpu:
           $cmake -DMALI_GPU=1 -DCMAKE_TOOLCHAIN_FILE=../cmake/OEToolchainConfig.cmake  ..
+
 To get process based cctx memory usage, you need:
-killall weston
-export MALI_REPORT_MEM_USAGE=1
-systemctl restart weston
-./gputop
-./gputop -h         see usage
+
+	killall weston
+	export MALI_REPORT_MEM_USAGE=1
+	systemctl restart weston
+	gputop
+	gputop -h         see usage
 
 Install:
 
-	$ make install
+$ make install
 
 Again specify -DCMAKE_INSTALL_PREFIX where to install the package.
 

@@ -101,7 +101,7 @@ enum err_code {
 };
 
 #define ARRAY_SIZE(a)		(sizeof(a)/sizeof(a[0]))
-
+#ifndef HAVE_GPU_MALI
 enum page {
 	PAGE_SHOW_CLIENTS,
 	PAGE_VID_MEM_USAGE,
@@ -137,6 +137,7 @@ enum display_samples {
 	SAMPLES_MAX,
 };
 
+
 enum flags_type {
 	FLAG_NONE = 0,
 	FLAG_MODE = 1,
@@ -149,22 +150,22 @@ enum flags_type {
 	FLAG_SHOW_BATCH_PERF = 8,
 	FLAG_IGNORE_START_ERRORS,
 };
-
+#endif
 /* 
  * Used to determine if the profiler is enabled
  *
  * Note: currently this is supported only on Linux, under QNX
  * this is always true.
  */
+	struct p_page {
+		uint8_t page_no;
+		const char *page_desc;
+	};
+
 #ifndef HAVE_GPU_MALI
 struct profiler_state {
 	bool enabled;
 	int state;
-};
-
-struct p_page {
-	uint8_t page_no;
-	const char *page_desc;
 };
 
 struct gtop_data {

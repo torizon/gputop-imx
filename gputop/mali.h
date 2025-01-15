@@ -33,13 +33,26 @@ enum page_mali {
 	PAGE_SHOW_GPU_INFO,
 	PAGE_KERNEL_MEM_USAGE,
 	PAGE_PID_MEM_USAGE,
-	PAGE_NONE,
+	PAGE_DVFS_UTILIZATION,
+#if defined HAVE_DDR_PERF && (defined __linux__ || defined __ANDROID__ || defined ANDROID)
+	PAGE_DDR_PERF,
+#endif
+	PAGE_NO,
 };
+
+enum flags_type {
+      FLAG_NONE = 0,
+      FLAG_SHOW_CONTEXTS = 1,
+      FLAG_IGNORE_START_ERRORS,
+};
+
 
 
 EXTERNC void gtop_display_mali_gpu_info(void);
 void gtop_display_mali_debugfs_info(void);
 void gtop_display_mali_debugfs_ktx_info(void);
 void gtop_display_mali_debugfs_pid_mem_info(void);
+void gtop_display_mali_debugfs_dvfs_utilization_info(void);
+void gtop_set_display_flags(enum flags_type flag);
 
 #endif /* end _MALI_H */

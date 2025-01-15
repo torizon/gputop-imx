@@ -42,6 +42,12 @@ struct gpuinfo_mali
 
     /** GPU ID */
     uint32_t gpu_id;
+    /** GPU version Status */
+    uint32_t version_status;
+    /** GPU minor version number */
+    uint32_t minor_revision;
+    /** GPU major version number */
+    uint32_t major_revision;
 
     /** Number of shader cores */
     uint32_t num_shader_cores;

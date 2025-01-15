@@ -66,7 +66,7 @@ static int perf_ddr_enabled = 0;
 /* other modifiers */
 static const char clear_screen[] = { 0x1b, '[', 'H', 0x1b, '[', 'J', 0x0 };
 static const char *bold_color = "\033[1m";
-//static const char *underlined_color = "\033[4m";
+static const char *underlined_color = "\033[4m";
 static const char *regular_color = "\033[0m";
 
 #if defined HAVE_DDR_PERF && (defined __linux__ || defined __ANDROID__ || defined ANDROID)
@@ -76,6 +76,33 @@ static struct perf_pmu_ddr perf_pmu_ddrs[] = {
 { "imx9_ddr0", { { -1, "eddrtq_pm_rd_beat_filt0" }, { -1, "eddrtq_pm_wr_beat_filt" } } },
  };
 #endif
+
+static struct p_page program_pages[] = {
+   [PAGE_SHOW_GPU]  = { PAGE_SHOW_GPU, "Main page " },
+   [PAGE_SHOW_GPU_INFO] = { PAGE_SHOW_GPU_INFO, "GPU Info" },
+   [PAGE_KERNEL_MEM_USAGE] = { PAGE_KERNEL_MEM_USAGE, "Kernel Memory Usage" },
+   [PAGE_PID_MEM_USAGE]     = { PAGE_PID_MEM_USAGE, "PID Based Process Memory Usage" },
+   [PAGE_DVFS_UTILIZATION]  = { PAGE_DVFS_UTILIZATION, "DVFS Utilization" },
+#if defined HAVE_DDR_PERF && (defined __linux__ || defined __ANDROID__ || defined ANDROID)
+   [PAGE_DDR_PERF]      = { PAGE_DDR_PERF, "DDR" },
+#endif
+};
+
+static void
+gtop_display_interactive_help(void)
+{
+	int dummy;
+
+	fprintf(stdout, "%s\n", clear_screen);
+
+	fprintf(stdout, " Arrows (<-|->) to navigate between pages         | Use 0-5 to switch directly\n");
+	fprintf(stdout, "\n Type any key to resume...");
+	fflush(NULL);
+
+	ssize_t nr = read(STDIN_FILENO, &dummy, sizeof(int));
+	(void) nr;
+
+}
 
 
 static void
@@ -179,6 +206,10 @@ gtop_check_keyboard(void)
 		(void) nread;
 	
 		switch (buf) {
+		case KEY_H:
+		case KEY_QUESTION_MARK:
+			gtop_display_interactive_help();
+			break;
 		case KB_ESCAPE:
 		case KEY_Q:
 			return -1;
@@ -197,6 +228,10 @@ gtop_check_keyboard(void)
 			 * we are displaying old info */
 			curr_page--;
 			break;
+		case KEY_X:
+			gtop_set_display_flags(FLAG_SHOW_CONTEXTS);
+			break;
+
 		case KEY_0:
 			curr_page = PAGE_SHOW_GPU;
 			break;
@@ -209,10 +244,16 @@ gtop_check_keyboard(void)
 		case KEY_3:
 			curr_page = PAGE_PID_MEM_USAGE;
 			break;
+		case KEY_4:
+			curr_page = PAGE_DVFS_UTILIZATION;
+			break;
+		case KEY_5:
+			curr_page = PAGE_DDR_PERF;
+			break;
 		}
 	
 		/* in case we reach end or maxium of pages */
-		if (curr_page == PAGE_NONE || curr_page == 0xff)
+		if (curr_page == PAGE_NO || curr_page == 0xff)
 			curr_page = 0;
 		return 0;
 	}
@@ -337,8 +378,84 @@ gtop_display_perf_pmus_short(void)
 
 	fprintf(stdout, "\n");
 }
-#endif
 
+
+static void
+gtop_display_perf_pmus(void)
+{
+	unsigned int i, j;
+	if (!perf_ddr_enabled) {
+		gtop_configure_pmus();
+		gtop_enable_pmus();
+		perf_ddr_enabled = 1;
+	}
+
+	fprintf(stdout, "\n");
+	fprintf(stdout, "%s%5s", underlined_color, "");
+
+	for_all_pmus(perf_pmu_ddrs, i, j) {
+		int fd = PMU_GET_FD(perf_pmu_ddrs, i, j);
+		if (fd > 0) {
+			const char *type_name = PMU_GET_TYPE_NAME(perf_pmu_ddrs, i);
+			const char *event_name = PMU_GET_EVENT_NAME(perf_pmu_ddrs, i, j);
+
+			fprintf(stdout, "%s/%s%3s",
+				type_name, event_name, "");
+
+		}
+	}
+
+	fprintf(stdout, "(MB)%s\n", regular_color);
+	fprintf(stdout, "%5s", "");
+
+	char buf[PATH_MAX];
+	/* use a marker to known how much we need to shift on the right and
+	 * print white spaces */
+	int p = 0;
+
+	for_all_pmus(perf_pmu_ddrs, i, j) {
+		int fd = PMU_GET_FD(perf_pmu_ddrs, i, j);
+		if (fd > 0) {
+			uint64_t counter_val = perf_event_pmu_read(fd);
+			const char *type_name = PMU_GET_TYPE_NAME(perf_pmu_ddrs, i);
+			const char *event_name = PMU_GET_EVENT_NAME(perf_pmu_ddrs, j, j);
+
+			memset(buf, 0, sizeof(buf));
+			snprintf(buf, sizeof(buf), "%s/%s", type_name, event_name);
+
+			size_t buf_len = strlen(buf);
+			double display_value = (double) counter_val * 32 / (1024 * 1024);
+
+			/* how much we need the remove from default value */
+			size_t adjust_float = 0;
+
+			if (display_value > 10.0f)
+				adjust_float++;
+			if (display_value > 100.0f)
+				adjust_float++;
+			if (display_value > 1000.0f)
+				adjust_float++;
+
+			if (p == 0)
+				gtop_display_white_space(buf_len - 4 - adjust_float);
+			else
+				/* +3 is %s/%s from buf, but we need to add this
+				 * only from the second hence p > 0
+				 */
+				gtop_display_white_space(buf_len - 4 + 3 - adjust_float);
+
+			/* 0.123 -> 4 chars */
+			fprintf(stdout, "%.2f", display_value);
+
+			perf_event_pmu_reset(fd);
+
+			p++;
+		}
+	}
+	fprintf(stdout, "\n");
+}
+
+#endif
 static
 void help(void)
 {
@@ -346,10 +463,12 @@ void help(void)
 	dprintf("  %s   [-i ]  [-h ] \n", prg_name);
 	dprintf("\n");
 	dprintf(" 4 pages, 0: Main page 1:performance statistics,kernel,drive and arch info  2: kernel mem info  3: PID based process mem info\n");
-	dprintf("press key 0-3 to display different page or arrow key to rotate between pages\n");
+	dprintf("  4: gpu utilization  5: Perf DDR memory bandwidth\n");
+	dprintf("press key 0-5 to display different page or arrow key to rotate between pages\n");
 	dprintf("press q or Esc key to quit\n");
 	dprintf("\n");
-	dprintf("  -i           display gpu info only\n");
+	dprintf("  -i          display gpu info only\n");
+	dprintf("  -x         display with context\n");
 	dprintf("  -h         Show this help message\n");
 	exit(EXIT_FAILURE);
 }
@@ -445,9 +564,10 @@ int main(int argc, char *argv[])
 		if(display_gpu_info_only)
 			break;
 		//t1 = get_ns_time();
-		if(curr_page ==PAGE_SHOW_GPU ||(last_page != curr_page)){ 
+		if((curr_page != PAGE_SHOW_GPU_INFO) ||(last_page != curr_page)){
 			fflush(stdout);
 			fprintf(stdout, "%s", clear_screen);
+			fprintf(stdout, "%s | %u / %u \n ", program_pages[curr_page].page_desc, curr_page, (PAGE_NO - 1));
 		}
 		switch (curr_page) {
 		case PAGE_SHOW_GPU:
@@ -460,16 +580,19 @@ int main(int argc, char *argv[])
 			gtop_display_mali_gpu_info();
 			break;
 		case PAGE_KERNEL_MEM_USAGE:
-			if(last_page == curr_page)
-				break;
 			gtop_display_mali_debugfs_ktx_info();
 			break;
 		case PAGE_PID_MEM_USAGE:
-			if(last_page == curr_page)
-				break;
 			gtop_display_mali_debugfs_pid_mem_info();
 			break;
-		case PAGE_NONE:
+		case PAGE_DVFS_UTILIZATION:
+			gtop_display_mali_debugfs_dvfs_utilization_info();
+			break;
+		case PAGE_DDR_PERF:
+			gtop_display_perf_pmus();
+			break;
+
+		case PAGE_NO:
 		default:
 			break;
 		}

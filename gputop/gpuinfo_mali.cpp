@@ -755,6 +755,11 @@ struct get_gpuprops_t {
     enum class gpuprop_code : uint8_t {
         /** Product id. */
         product_id = 1,
+         version_status = 2,
+         /** Minor revision. */
+         minor_revision = 3,
+         /** Major revision. */
+         major_revision = 4,
          /** Total Avaliable gpu memory **/
         gpu_available_memory_size = 12,
         /** L2 log2 line size. */
@@ -907,6 +912,15 @@ class prop_decoder {
             switch (id) {
             case prop_id_t::product_id:
                 info.gpu_id = value;
+                break;
+             case prop_id_t::version_status:
+                info.version_status = value;
+                break;
+             case prop_id_t::major_revision:
+                info.major_revision = value;
+                break;
+              case prop_id_t::minor_revision:
+                info.minor_revision = value;
                 break;
             case prop_id_t::l2_log2_cache_size:
                 info.num_l2_bytes = 1UL << value;
@@ -1163,7 +1177,7 @@ bool init_mali_props() {
       std::cout << "ERROR: Failed to Init gpu mali info\n";
       return;
 } 
-
+   std::cout << "\n";
    std::cout << "Device configuration:\n";
    std::cout << "  Kernel version: " << get_kernel_version() << "\n";
 
@@ -1172,8 +1186,11 @@ bool init_mali_props() {
    std::cout << "  Architecture: " << gpuinfo.architecture_name << "\n";
    std::cout << "  GPU Total Available memory: " << gpuinfo.gpu_avail_mem_size << " bytes\n";
    std::cout << "  Model number: 0x" << std::hex << gpuinfo.gpu_id << std::dec << "\n";
+   //std::cout << "  GPU Version: R" << gpuinfo.major_revision << "P" << gpuinfo.minor_revision << "\n";
    std::cout << "  Core count: " << gpuinfo.num_shader_cores << "\n";
    std::cout << "  Core mask: 0x" << std::hex << gpuinfo.shader_core_mask << std::dec << "\n";
+   std::cout << "  GPU Version Status: " << gpuinfo.version_status  << "\n";
+
    std::cout << "  L2 cache count: " << gpuinfo.num_l2_slices << "\n";
    std::cout << "  Total L2 cache size: " << gpuinfo.num_l2_bytes << " bytes\n";
    std::cout << "  Bus width: " << gpuinfo.num_bus_bits << " bits\n";
